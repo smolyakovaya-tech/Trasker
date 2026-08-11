@@ -28,7 +28,6 @@
             user-select: none;
         }
         .container { max-width: 480px; margin: 0 auto; }
-
         .header { text-align: center; padding: 20px 0 12px; }
         .header .icon { font-size: 42px; margin-bottom: 6px; }
         .header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
@@ -73,14 +72,7 @@
         .time-block.day { background: #f5faff; border-color: #90caf9; }
         .time-block.evening { background: #fdf5ff; border-color: #ce93d8; }
 
-        .block-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .block-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
         .habit-card {
             background: rgba(255,255,255,0.8);
@@ -155,12 +147,7 @@
             box-shadow: var(--shadow);
             border: 1px solid var(--border);
         }
-        .metrics-card .metric-col {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
+        .metrics-card .metric-col { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
         .metrics-card input {
             padding: 10px 12px;
             border: 1.5px solid var(--border);
@@ -249,7 +236,6 @@
         <div class="days" id="streakCount">0</div>
     </div>
 
-    <!-- УТРО -->
     <div class="time-block morning">
         <div class="block-title">🌅 УТРО</div>
         <div id="morningHabits"></div>
@@ -259,7 +245,6 @@
         <div class="water-row" id="morningWater"></div>
     </div>
 
-    <!-- ДЕНЬ -->
     <div class="time-block day">
         <div class="block-title">☀️ ДЕНЬ</div>
         <div id="dayHabits"></div>
@@ -269,7 +254,6 @@
         <div class="water-row" id="dayWater"></div>
     </div>
 
-    <!-- ВЕЧЕР -->
     <div class="time-block evening">
         <div class="block-title">🌙 ВЕЧЕР</div>
         <div id="eveningHabits"></div>
@@ -280,7 +264,6 @@
         <div class="water-total" id="waterTotal"></div>
     </div>
 
-    <!-- ВЕС И ЗАМЕРЫ -->
     <div class="section-title">⚖️ ВЕС И ЗАМЕРЫ</div>
     <div class="metrics-card">
         <div class="metric-col">
@@ -291,7 +274,6 @@
         <div class="feel-row" id="feelRow"></div>
     </div>
 
-    <!-- ЗАМЕТКИ -->
     <div class="section-title">📝 ЗАМЕТКИ</div>
     <div class="notes-card">
         <textarea id="notesField" placeholder="Как прошёл день?"></textarea>
@@ -311,7 +293,7 @@
 
 <script>
 (function() {
-    const STORAGE_KEY = 'yana_tracker_v5';
+    const STORAGE_KEY = 'yana_tracker_v6';
     const START_DATE = new Date(2026, 6, 19); // 19 июля 2026
 
     const MORNING_HABITS = [
@@ -328,6 +310,8 @@
         { id: 'read', name: '20 страниц книги', icon: '📖' },
         { id: 'mood', name: 'Без жалоб и споров', icon: '😌' }
     ];
+    const ALL_HABITS = [...MORNING_HABITS, ...DAY_HABITS, ...EVENING_HABITS];
+
     const MORNING_SUPPS = ['Цинк+Селен', 'D3+K2', 'Таурин'];
     const DAY_SUPPS = ['Теанин'];
     const EVENING_SUPPS = ['Магний'];
@@ -461,10 +445,16 @@
             const day = data.days[k];
             const ds = c.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
             if (day && day.habits && Object.keys(day.habits).length > 0) {
-                const total = MORNING_HABITS.length + DAY_HABITS.length + EVENING_HABITS.length;
+                const total = ALL_HABITS.length;
                 const done = Object.values(day.habits).filter(v=>v).length;
                 lines.push(`📅 ${ds} — ${done}/${total} привычек`);
+                ALL_HABITS.forEach(h => {
+                    const status = day.habits[h.id] ? '✅' : '❌';
+                    lines.push(`   ${status} ${h.name}`);
+                });
                 if (day.weight) lines.push(`   ⚖️ Вес: ${day.weight} кг`);
+                if (day.waist) lines.push(`   📏 Талия: ${day.waist} см`);
+                if (day.hips) lines.push(`   📏 Бёдра: ${day.hips} см`);
                 if (day.feel) lines.push(`   😌 Самочувствие: ${day.feel}`);
                 if (day.notes) lines.push(`   📝 ${day.notes}`);
             } else {
