@@ -159,8 +159,8 @@
             width: 100%;
         }
         .metrics-card input:focus { border-color: var(--accent); }
-        .feel-row { display: flex; gap: 6px; flex-wrap: wrap; }
-        .feel-chip {
+        .feel-row, .sleep-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .feel-chip, .sleep-chip {
             background: var(--card);
             border: 1.5px solid var(--border);
             border-radius: 20px;
@@ -169,8 +169,46 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .feel-chip:active { transform: scale(0.95); }
-        .feel-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .feel-chip:active, .sleep-chip:active { transform: scale(0.95); }
+        .feel-chip.selected, .sleep-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        .photo-reminder {
+            background: #fff3e0;
+            border: 1px solid #ffcc80;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .photo-reminder .reminder-text { font-weight: 600; font-size: 14px; color: #e65100; }
+        .photo-reminder .btn-small {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .photo-reminder .btn-small:active { transform: scale(0.95); }
+
+        .weight-chart {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            margin: 12px 0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--sub);
+            text-align: center;
+        }
+        .weight-chart .chart-values { font-weight: 600; color: var(--text); word-break: break-all; }
 
         .notes-card {
             background: var(--card);
@@ -236,6 +274,13 @@
         <div class="days" id="streakCount">0</div>
     </div>
 
+    <!-- Фото-напоминалка -->
+    <div class="photo-reminder" id="photoReminder" style="display: none;">
+        <span class="reminder-text">📸 Сегодня день фото!</span>
+        <button class="btn-small" id="photoDoneBtn">Готово</button>
+    </div>
+
+    <!-- УТРО -->
     <div class="time-block morning">
         <div class="block-title">🌅 УТРО</div>
         <div id="morningHabits"></div>
@@ -245,6 +290,7 @@
         <div class="water-row" id="morningWater"></div>
     </div>
 
+    <!-- ДЕНЬ -->
     <div class="time-block day">
         <div class="block-title">☀️ ДЕНЬ</div>
         <div id="dayHabits"></div>
@@ -254,6 +300,7 @@
         <div class="water-row" id="dayWater"></div>
     </div>
 
+    <!-- ВЕЧЕР -->
     <div class="time-block evening">
         <div class="block-title">🌙 ВЕЧЕР</div>
         <div id="eveningHabits"></div>
@@ -264,16 +311,32 @@
         <div class="water-total" id="waterTotal"></div>
     </div>
 
+    <!-- СОН -->
+    <div class="section-title">💤 КАЧЕСТВО СНА</div>
+    <div class="metrics-card">
+        <div class="sleep-row" id="sleepRow"></div>
+    </div>
+
+    <!-- ВЕС И ЗАМЕРЫ -->
     <div class="section-title">⚖️ ВЕС И ЗАМЕРЫ</div>
     <div class="metrics-card">
         <div class="metric-col">
             <input type="number" id="weightInput" placeholder="Вес, кг" step="0.1">
+            <input type="number" id="underbustInput" placeholder="Под грудью, см" step="0.1">
             <input type="number" id="waistInput" placeholder="Талия, см" step="0.1">
+            <input type="number" id="bellyInput" placeholder="Живот, см" step="0.1">
             <input type="number" id="hipsInput" placeholder="Бёдра, см" step="0.1">
+            <input type="number" id="thighInput" placeholder="Бедро, см" step="0.1">
         </div>
         <div class="feel-row" id="feelRow"></div>
     </div>
 
+    <!-- МИНИ-ГРАФИК ВЕСА -->
+    <div class="weight-chart" id="weightChart">
+        📊 Вес за 7 дней: <span class="chart-values" id="chartValues">—</span>
+    </div>
+
+    <!-- ЗАМЕТКИ -->
     <div class="section-title">📝 ЗАМЕТКИ</div>
     <div class="notes-card">
         <textarea id="notesField" placeholder="Как прошёл день?"></textarea>
@@ -293,8 +356,9 @@
 
 <script>
 (function() {
-    const STORAGE_KEY = 'yana_tracker_v6';
+    const STORAGE_KEY = 'yana_tracker_v7';
     const START_DATE = new Date(2026, 6, 19); // 19 июля 2026
+    const PHOTO_INTERVAL = 30; // дней между напоминаниями о фото
 
     const MORNING_HABITS = [
         { id: 'wake', name: 'Подъём в 7:30', icon: '⏰' },
@@ -317,15 +381,17 @@
     const EVENING_SUPPS = ['Магний'];
     const WATER_SPLIT = { morning: 2, day: 4, evening: 2 };
     const FEEL_OPTIONS = ['😊 Легко', '😐 Норма', '😞 Устала', '💪 Энергия', '😤 Раздражение', '🤰 Отёки'];
+    const SLEEP_OPTIONS = ['😴 Плохо', '😐 Средне', '😊 Отлично'];
 
     function getToday() {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
-    let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{}}');
+    let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{},"lastPhotoDate":null}');
+    if (!data.lastPhotoDate) data.lastPhotoDate = null;
     let today = getToday();
-    let current = data.days[today] || { habits: {}, supps: {}, water: {}, weight: '', waist: '', hips: '', feel: '', notes: '' };
+    let current = data.days[today] || { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
 
     function save() { data.days[today] = current; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
 
@@ -333,11 +399,29 @@
     function toggleSupp(key) { current.supps[key] = !current.supps[key]; save(); render(); }
     function toggleWater(key) { current.water[key] = !current.water[key]; save(); render(); }
     function setFeel(f) { current.feel = f; save(); render(); }
+    function setSleep(s) { current.sleep = s; save(); render(); }
+
+    function isPhotoDay() {
+        if (!data.lastPhotoDate) return true;
+        const last = new Date(data.lastPhotoDate);
+        const now = new Date();
+        const diff = Math.floor((now - last) / 86400000);
+        return diff >= PHOTO_INTERVAL;
+    }
+
+    function markPhotoDone() {
+        current.photoDone = true;
+        data.lastPhotoDate = today;
+        save();
+        render();
+        showToast('📸 Фото отмечено!');
+    }
 
     function render() {
         const freedomDays = Math.floor((new Date() - START_DATE) / 86400000);
         document.getElementById('freedomDays').textContent = freedomDays;
 
+        // Streak
         let streak = 0;
         const d = new Date();
         for (let i = 0; i < 365; i++) {
@@ -350,6 +434,15 @@
         }
         document.getElementById('streakCount').textContent = streak;
 
+        // Photo reminder
+        const photoReminder = document.getElementById('photoReminder');
+        if (isPhotoDay() && !current.photoDone) {
+            photoReminder.style.display = 'flex';
+        } else {
+            photoReminder.style.display = 'none';
+        }
+
+        // Habits
         function renderHabits(containerId, habits) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
@@ -366,6 +459,7 @@
         renderHabits('dayHabits', DAY_HABITS);
         renderHabits('eveningHabits', EVENING_HABITS);
 
+        // Supps
         function renderSupps(containerId, list, prefix) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
@@ -383,6 +477,7 @@
         renderSupps('daySupps', DAY_SUPPS, 'd_');
         renderSupps('eveningSupps', EVENING_SUPPS, 'e_');
 
+        // Water
         function renderWater(containerId, count, prefix) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
@@ -408,9 +503,24 @@
         });
         document.getElementById('waterTotal').textContent = `💧 Всего воды: ${totalWater} из ${totalCups} стаканов`;
 
+        // Sleep
+        const sleepRow = document.getElementById('sleepRow');
+        sleepRow.innerHTML = '';
+        SLEEP_OPTIONS.forEach(s => {
+            const chip = document.createElement('span');
+            chip.className = 'sleep-chip' + (current.sleep === s ? ' selected' : '');
+            chip.textContent = s;
+            chip.onclick = () => setSleep(s);
+            sleepRow.appendChild(chip);
+        });
+
+        // Metrics
         document.getElementById('weightInput').value = current.weight || '';
+        document.getElementById('underbustInput').value = current.underbust || '';
         document.getElementById('waistInput').value = current.waist || '';
+        document.getElementById('bellyInput').value = current.belly || '';
         document.getElementById('hipsInput').value = current.hips || '';
+        document.getElementById('thighInput').value = current.thigh || '';
 
         const feelRow = document.getElementById('feelRow');
         feelRow.innerHTML = '';
@@ -422,13 +532,31 @@
             feelRow.appendChild(chip);
         });
 
+        // Weight chart
+        const chartValues = [];
+        const now = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const c = new Date(now); c.setDate(now.getDate() - i);
+            const k = `${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}-${String(c.getDate()).padStart(2,'0')}`;
+            const day = data.days[k];
+            if (day && day.weight) {
+                chartValues.push(day.weight);
+            } else {
+                chartValues.push('—');
+            }
+        }
+        document.getElementById('chartValues').textContent = chartValues.join(' → ');
+
         document.getElementById('notesField').value = current.notes || '';
     }
 
     function saveAll() {
         current.weight = document.getElementById('weightInput').value.trim();
+        current.underbust = document.getElementById('underbustInput').value.trim();
         current.waist = document.getElementById('waistInput').value.trim();
+        current.belly = document.getElementById('bellyInput').value.trim();
         current.hips = document.getElementById('hipsInput').value.trim();
+        current.thigh = document.getElementById('thighInput').value.trim();
         current.notes = document.getElementById('notesField').value.trim();
         save();
         render();
@@ -452,10 +580,15 @@
                     const status = day.habits[h.id] ? '✅' : '❌';
                     lines.push(`   ${status} ${h.name}`);
                 });
+                if (day.sleep) lines.push(`   💤 Сон: ${day.sleep}`);
                 if (day.weight) lines.push(`   ⚖️ Вес: ${day.weight} кг`);
+                if (day.underbust) lines.push(`   📏 Под грудью: ${day.underbust} см`);
                 if (day.waist) lines.push(`   📏 Талия: ${day.waist} см`);
+                if (day.belly) lines.push(`   📏 Живот: ${day.belly} см`);
                 if (day.hips) lines.push(`   📏 Бёдра: ${day.hips} см`);
+                if (day.thigh) lines.push(`   📏 Бедро: ${day.thigh} см`);
                 if (day.feel) lines.push(`   😌 Самочувствие: ${day.feel}`);
+                if (day.photoDone) lines.push(`   📸 Фото сделано`);
                 if (day.notes) lines.push(`   📝 ${day.notes}`);
             } else {
                 lines.push(`📅 ${ds} — нет данных`);
@@ -468,8 +601,8 @@
     function resetAll() {
         if (confirm('Удалить все данные?')) {
             localStorage.removeItem(STORAGE_KEY);
-            data = { days: {} };
-            current = { habits: {}, supps: {}, water: {}, weight: '', waist: '', hips: '', feel: '', notes: '' };
+            data = { days: {}, lastPhotoDate: null };
+            current = { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
             render();
         }
     }
@@ -483,8 +616,9 @@
     document.getElementById('saveBtn').onclick = saveAll;
     document.getElementById('exportBtn').onclick = exportReport;
     document.getElementById('resetAllBtn').onclick = resetAll;
+    document.getElementById('photoDoneBtn').onclick = markPhotoDone;
 
-    if (!data.days[today]) current = { habits: {}, supps: {}, water: {}, weight: '', waist: '', hips: '', feel: '', notes: '' };
+    if (!data.days[today]) current = { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
     render();
 })();
 </script>
