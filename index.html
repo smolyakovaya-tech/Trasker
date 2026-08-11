@@ -6,72 +6,85 @@
     <title>Трекер Яны</title>
     <style>
         :root {
-            --bg: #f2f2f7;
-            --card: #ffffff;
-            --text: #1a1a1a;
-            --sub: #8e8e93;
-            --accent: #ff9500;
-            --border: #e5e5ea;
-            --done: #34c759;
-            --gold: #ffcc00;
-            --shadow: 0 2px 12px rgba(0,0,0,0.06);
-            --radius: 20px;
+            --bg-start: #1a1a2e;
+            --bg-mid: #16213e;
+            --bg-end: #0f3460;
+            --glass: rgba(255,255,255,0.08);
+            --glass-border: rgba(255,255,255,0.12);
+            --glass-hover: rgba(255,255,255,0.14);
+            --text: #ffffff;
+            --text-secondary: rgba(255,255,255,0.65);
+            --accent: #ff9f43;
+            --accent-glow: rgba(255,159,67,0.3);
+            --done: #2ed573;
+            --done-glow: rgba(46,213,115,0.3);
+            --blue: #54a0ff;
+            --blue-glow: rgba(84,160,255,0.3);
+            --radius: 24px;
+            --radius-sm: 16px;
+            --blur: 20px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(160deg, var(--bg-start) 0%, var(--bg-mid) 40%, var(--bg-end) 100%);
+            background-attachment: fixed;
             color: var(--text);
             min-height: 100vh;
-            padding: 16px 16px 100px;
+            padding: 20px 16px 100px;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
             user-select: none;
+            letter-spacing: -0.2px;
         }
-        .container { max-width: 480px; margin: 0 auto; }
-        .header { text-align: center; padding: 20px 0 12px; }
-        .header .icon { font-size: 42px; margin-bottom: 6px; }
-        .header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.3px; }
+        .container { max-width: 440px; margin: 0 auto; }
 
-        .freedom-card {
-            background: #e8f5e9;
-            border-radius: var(--radius);
-            padding: 16px 20px;
-            margin: 8px 0 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--shadow);
-            border: 1px solid #a5d6a7;
-        }
-        .freedom-card .days-count { font-size: 40px; font-weight: 800; color: #2e7d32; letter-spacing: -1px; line-height: 1; }
-        .freedom-card .label { font-size: 14px; color: #388e3c; font-weight: 600; }
+        .header { text-align: center; padding: 10px 0 20px; }
+        .header .icon { font-size: 38px; margin-bottom: 8px; }
+        .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.4px; }
 
-        .streak-card {
-            background: var(--card);
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(var(--blur));
+            -webkit-backdrop-filter: blur(var(--blur));
+            border: 1px solid var(--glass-border);
             border-radius: var(--radius);
             padding: 18px 20px;
-            margin: 12px 0 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
+            margin-bottom: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
-        .streak-card .days { font-size: 40px; font-weight: 800; color: var(--accent); letter-spacing: -1px; line-height: 1; }
-        .streak-card .label { font-size: 13px; color: var(--sub); font-weight: 500; }
 
-        /* Календарь */
+        .freedom-row, .streak-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .freedom-row .days-count {
+            font-size: 52px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2ed573, #7bed9f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+        .streak-row .days {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -1px;
+            line-height: 1;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+        .freedom-row .label, .streak-row .label { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
+
+        /* Calendar */
         .calendar {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 14px 16px;
-            margin: 12px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 2px;
         }
         .calendar .day-cell {
             display: flex;
@@ -79,149 +92,202 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
-            padding: 6px 4px;
-            border-radius: 14px;
-            transition: all 0.2s;
-            min-width: 38px;
+            padding: 8px 4px;
+            border-radius: 18px;
+            transition: all 0.2s ease;
+            min-width: 40px;
+            background: transparent;
         }
-        .calendar .day-cell:active { transform: scale(0.92); }
-        .calendar .day-cell.today { border: 2px solid var(--accent); }
-        .calendar .day-cell.selected { background: #fff3e0; }
-        .calendar .day-cell .dow { font-size: 11px; color: var(--sub); font-weight: 500; text-transform: uppercase; }
-        .calendar .day-cell .dom { font-size: 17px; font-weight: 700; }
-        .calendar .day-cell .dot {
-            width: 8px; height: 8px;
+        .calendar .day-cell:active { transform: scale(0.93); }
+        .calendar .day-cell.today { background: rgba(255,255,255,0.1); }
+        .calendar .day-cell.selected { background: var(--glass-hover); outline: 2px solid var(--accent); }
+        .calendar .dow { font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .calendar .dom { font-size: 17px; font-weight: 700; }
+        .calendar .dot {
+            width: 7px; height: 7px;
             border-radius: 50%;
-            background: #d1d1d6;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.2s;
         }
-        .calendar .day-cell .dot.gold { background: var(--gold); }
-        .calendar .day-cell .dot.orange { background: var(--accent); }
-        .calendar .day-cell .dot.green { background: var(--done); }
+        .calendar .dot.gold { background: #ffd700; box-shadow: 0 0 8px rgba(255,215,0,0.5); }
+        .calendar .dot.orange { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+        .calendar .dot.green { background: var(--done); box-shadow: 0 0 8px var(--done-glow); }
         .calendar .nav-btn {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
-            padding: 4px;
-            color: var(--accent);
+            padding: 4px 8px;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+        .calendar .nav-btn:active { color: var(--text); }
+
+        /* Time blocks */
+        .time-block { position: relative; overflow: hidden; }
+        .time-block.morning { border-left: 3px solid #ffa502; }
+        .time-block.day { border-left: 3px solid #54a0ff; }
+        .time-block.evening { border-left: 3px solid #a55eea; }
+        .time-block .block-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .time-block {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 18px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-            border: 1px solid transparent;
+        .selected-date-label {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: -6px 0 10px;
+            font-weight: 500;
         }
-        .time-block.morning { background: #fffdf5; border-color: #ffe082; }
-        .time-block.day { background: #f5faff; border-color: #90caf9; }
-        .time-block.evening { background: #fdf5ff; border-color: #ce93d8; }
-
-        .block-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
 
         .habit-card {
-            background: rgba(255,255,255,0.8);
-            border-radius: 16px;
-            padding: 14px 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius-sm);
+            padding: 13px 16px;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 12px;
-            border: 1px solid var(--border);
-            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.2s ease;
             cursor: pointer;
-            backdrop-filter: blur(5px);
         }
-        .habit-card:active { transform: scale(0.985); }
-        .habit-card.done { border-color: transparent; background: #f0faf2; }
-        .habit-card.done .habit-check { background: var(--done); border-color: var(--done); }
+        .habit-card:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+        .habit-card.done {
+            background: rgba(46,213,115,0.12);
+            border-color: rgba(46,213,115,0.3);
+            box-shadow: 0 0 16px rgba(46,213,115,0.1);
+        }
         .habit-check {
-            width: 32px; height: 32px;
+            width: 34px; height: 34px;
             border-radius: 50%;
-            border: 2px solid #d1d1d6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-            transition: all 0.25s;
-            background: #fff;
-        }
-        .habit-info { flex: 1; }
-        .habit-info .name { font-weight: 600; font-size: 15px; letter-spacing: -0.2px; }
-        .habit-card.done .habit-info .name { color: #1b5e20; }
-
-        .sub-title { font-weight: 600; font-size: 14px; margin: 10px 0 6px; }
-
-        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
-        .chip {
-            background: #fff;
-            border: 1.5px solid var(--border);
-            border-radius: 20px;
-            padding: 8px 14px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .chip:active { transform: scale(0.95); }
-        .chip.done { background: var(--done); border-color: var(--done); color: #fff; }
-
-        .water-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .water-cup {
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            border: 2px solid #64b5f6;
+            border: 2px solid rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #fff;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+            background: transparent;
         }
-        .water-cup.filled { background: #64b5f6; }
-        .water-total { font-weight: 600; font-size: 15px; color: #1976d2; text-align: right; margin-top: 10px; }
+        .habit-card.done .habit-check {
+            background: var(--done);
+            border-color: var(--done);
+            box-shadow: 0 0 12px var(--done-glow);
+        }
+        .habit-info { flex: 1; }
+        .habit-info .name {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text);
+        }
+        .habit-card.done .habit-info .name { color: #2ed573; }
 
-        .metrics-card {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 16px 18px;
-            margin: 12px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
+        .sub-title { font-weight: 600; font-size: 13px; color: var(--text-secondary); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 9px 15px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            color: var(--text);
         }
-        .metrics-card .metric-col { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .chip:active { transform: scale(0.95); }
+        .chip.done {
+            background: rgba(46,213,115,0.2);
+            border-color: rgba(46,213,115,0.4);
+            color: #2ed573;
+            box-shadow: 0 0 12px rgba(46,213,115,0.2);
+        }
+
+        .water-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .water-cup {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 2px solid rgba(84,160,255,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+        }
+        .water-cup.filled {
+            background: rgba(84,160,255,0.3);
+            border-color: var(--blue);
+            box-shadow: 0 0 14px var(--blue-glow);
+        }
+        .water-total {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--blue);
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 0 8px 6px;
+        }
+
         .metrics-card input {
-            padding: 10px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            font-size: 15px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            font-size: 16px;
             font-family: inherit;
             outline: none;
-            background: #f9f9f9;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
             width: 100%;
+            transition: all 0.2s ease;
         }
-        .metrics-card input:focus { border-color: var(--accent); }
-        .feel-row, .sleep-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .metrics-card input:focus {
+            border-color: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 12px rgba(255,255,255,0.05);
+        }
+        .metrics-card input::placeholder { color: rgba(255,255,255,0.25); }
+
+        .feel-row, .sleep-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .feel-chip, .sleep-chip {
-            background: var(--card);
-            border: 1.5px solid var(--border);
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 20px;
-            padding: 8px 14px;
+            padding: 10px 16px;
             font-size: 13px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            color: var(--text);
         }
         .feel-chip:active, .sleep-chip:active { transform: scale(0.95); }
-        .feel-chip.selected, .sleep-chip.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .feel-chip.selected, .sleep-chip.selected {
+            background: rgba(255,159,67,0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
 
         .photo-reminder {
-            background: #fff3e0;
-            border: 1px solid #ffcc80;
-            border-radius: 16px;
+            background: rgba(255,159,67,0.1);
+            border: 1px solid rgba(255,159,67,0.3);
+            border-radius: var(--radius-sm);
             padding: 14px 16px;
             margin: 12px 0;
             display: flex;
@@ -229,64 +295,63 @@
             justify-content: space-between;
             gap: 10px;
         }
-        .photo-reminder .reminder-text { font-weight: 600; font-size: 14px; color: #e65100; }
+        .photo-reminder .reminder-text { font-weight: 600; font-size: 14px; color: var(--accent); }
         .photo-reminder .btn-small {
             background: var(--accent);
-            color: #fff;
+            color: #000;
             border: none;
-            border-radius: 12px;
-            padding: 8px 16px;
+            border-radius: 14px;
+            padding: 9px 18px;
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
             white-space: nowrap;
+            transition: all 0.2s;
         }
         .photo-reminder .btn-small:active { transform: scale(0.95); }
 
-        .weight-chart {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 14px 18px;
-            margin: 12px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            font-size: 14px;
-            color: var(--sub);
-            text-align: center;
+        .weight-chart .chart-values {
+            font-weight: 600;
+            color: var(--text);
+            word-break: break-all;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 12px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 4px;
         }
-        .weight-chart .chart-values { font-weight: 600; color: var(--text); word-break: break-all; }
 
-        .notes-card {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 16px 18px;
-            margin: 12px 0;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
         .notes-card textarea {
             width: 100%; border: none; resize: vertical;
-            font-size: 15px; font-family: inherit;
+            font-size: 16px; font-family: inherit;
             color: var(--text); background: transparent;
-            outline: none; min-height: 70px; line-height: 1.5;
+            outline: none; min-height: 80px; line-height: 1.5;
         }
-        .notes-card textarea::placeholder { color: #c7c7cc; }
+        .notes-card textarea::placeholder { color: rgba(255,255,255,0.25); }
 
         .btn-row { display: flex; gap: 10px; margin: 16px 0; }
         .btn {
-            flex: 1; padding: 14px;
-            border-radius: 12px;
-            font-weight: 600; font-size: 15px;
+            flex: 1; padding: 16px;
+            border-radius: 16px;
+            font-weight: 600; font-size: 16px;
             text-align: center; cursor: pointer;
-            border: none; transition: all 0.2s;
+            border: none; transition: all 0.2s ease;
             letter-spacing: -0.2px;
         }
         .btn:active { transform: scale(0.96); }
-        .btn-primary { background: var(--accent); color: #fff; }
-        .btn-secondary { background: var(--card); color: var(--accent); border: 1.5px solid var(--accent); }
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
         .btn-ghost {
-            background: transparent; color: var(--sub);
-            font-weight: 500; font-size: 13px;
+            background: transparent; color: var(--text-secondary);
+            font-weight: 500; font-size: 14px;
             padding: 8px; text-decoration: underline;
             border: none; display: block; margin: 0 auto; cursor: pointer;
         }
@@ -294,14 +359,18 @@
         .toast {
             position: fixed; bottom: 30px; left: 50%;
             transform: translateX(-50%);
-            background: #1a1a1a; color: #fff;
+            background: rgba(30,30,50,0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #fff;
             padding: 12px 24px; border-radius: 30px;
             font-weight: 600; font-size: 14px;
             opacity: 0; pointer-events: none;
             transition: opacity 0.3s; z-index: 99;
+            border: 1px solid rgba(255,255,255,0.15);
         }
         .toast.show { opacity: 1; }
-        .footer { text-align: center; color: #c7c7cc; font-size: 11px; margin-top: 10px; }
+        .footer { text-align: center; color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 10px; }
         .reset-area { text-align: center; margin: 20px 0 0; }
     </style>
 </head>
@@ -311,17 +380,19 @@
         <div class="icon">🕊️</div>
         <h1>Трекер Яны</h1>
     </div>
-    <div class="freedom-card">
-        <div class="label">Свобода</div>
-        <div class="days-count" id="freedomDays">0</div>
+
+    <div class="glass freedom-row">
+        <span class="label">Свобода</span>
+        <span class="days-count" id="freedomDays">0</span>
     </div>
-    <div class="streak-card">
-        <div class="label">Серия привычек</div>
-        <div class="days" id="streakCount">0</div>
+
+    <div class="glass streak-row">
+        <span class="label">Серия привычек</span>
+        <span class="days" id="streakCount">0</span>
     </div>
 
     <!-- КАЛЕНДАРЬ -->
-    <div class="calendar" id="calendar"></div>
+    <div class="glass calendar" id="calendar"></div>
 
     <!-- Фото-напоминалка -->
     <div class="photo-reminder" id="photoReminder" style="display: none;">
@@ -330,52 +401,52 @@
     </div>
 
     <!-- УТРО -->
-    <div class="time-block morning">
-        <div class="block-title">🌅 УТРО</div>
+    <div class="glass time-block morning">
+        <div class="block-title">🌅 Утро</div>
         <div id="morningHabits"></div>
-        <div class="sub-title">💊 Добавки</div>
+        <div class="sub-title">Добавки</div>
         <div class="chip-row" id="morningSupps"></div>
-        <div class="sub-title">💧 Вода</div>
+        <div class="sub-title">Вода</div>
         <div class="water-row" id="morningWater"></div>
     </div>
 
     <!-- ДЕНЬ -->
-    <div class="time-block day">
-        <div class="block-title">☀️ ДЕНЬ</div>
+    <div class="glass time-block day">
+        <div class="block-title">☀️ День</div>
         <div id="dayHabits"></div>
-        <div class="sub-title">💊 Добавки</div>
+        <div class="sub-title">Добавки</div>
         <div class="chip-row" id="daySupps"></div>
-        <div class="sub-title">💧 Вода</div>
+        <div class="sub-title">Вода</div>
         <div class="water-row" id="dayWater"></div>
     </div>
 
     <!-- ВЕЧЕР -->
-    <div class="time-block evening">
-        <div class="block-title">🌙 ВЕЧЕР</div>
+    <div class="glass time-block evening">
+        <div class="block-title">🌙 Вечер</div>
         <div id="eveningHabits"></div>
-        <div class="sub-title">💊 Добавки</div>
+        <div class="sub-title">Добавки</div>
         <div class="chip-row" id="eveningSupps"></div>
-        <div class="sub-title">💧 Вода</div>
+        <div class="sub-title">Вода</div>
         <div class="water-row" id="eveningWater"></div>
         <div class="water-total" id="waterTotal"></div>
     </div>
 
     <!-- СОН -->
-    <div class="section-title">💤 КАЧЕСТВО СНА</div>
-    <div class="metrics-card">
+    <div class="section-title">💤 Качество сна</div>
+    <div class="glass">
         <div class="sleep-row" id="sleepRow"></div>
     </div>
 
     <!-- САМОЧУВСТВИЕ -->
-    <div class="section-title">😌 ОЦЕНКА САМОЧУВСТВИЯ</div>
-    <div class="metrics-card">
+    <div class="section-title">😌 Оценка самочувствия</div>
+    <div class="glass">
         <div class="feel-row" id="feelRow"></div>
     </div>
 
     <!-- ВЕС И ЗАМЕРЫ -->
-    <div class="section-title">⚖️ ВЕС И ЗАМЕРЫ</div>
-    <div class="metrics-card">
-        <div class="metric-col">
+    <div class="section-title">⚖️ Вес и замеры</div>
+    <div class="glass">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
             <input type="number" id="weightInput" placeholder="Вес, кг" step="0.1">
             <input type="number" id="underbustInput" placeholder="Под грудью, см" step="0.1">
             <input type="number" id="waistInput" placeholder="Талия, см" step="0.1">
@@ -386,13 +457,13 @@
     </div>
 
     <!-- МИНИ-ГРАФИК ВЕСА -->
-    <div class="weight-chart" id="weightChart">
-        📊 Вес за 7 дней: <span class="chart-values" id="chartValues">—</span>
+    <div class="glass weight-chart">
+        📊 Вес за 7 дней<br><span class="chart-values" id="chartValues">—</span>
     </div>
 
     <!-- ЗАМЕТКИ -->
-    <div class="section-title">📝 ЗАМЕТКИ</div>
-    <div class="notes-card">
+    <div class="section-title">📝 Заметки</div>
+    <div class="glass notes-card">
         <textarea id="notesField" placeholder="Как прошёл день?"></textarea>
     </div>
 
@@ -410,8 +481,8 @@
 
 <script>
 (function() {
-    const STORAGE_KEY = 'yana_tracker_v8';
-    const START_DATE = new Date(2026, 6, 19);
+    const STORAGE_KEY = 'yana_tracker_v10';
+    const START_DATE = new Date(2026, 6, 19); // 19 июля 2026
     const PHOTO_INTERVAL = 30;
 
     const MORNING_HABITS = [
@@ -442,28 +513,74 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
+    // Загружаем или создаем данные
     let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{},"lastPhotoDate":null}');
     if (!data.lastPhotoDate) data.lastPhotoDate = null;
     let today = getToday();
     let selectedDate = today;
-    let weekOffset = 0; // 0 = текущая неделя
+    let weekOffset = 0;
 
+    // Получить данные для конкретного дня (или создать пустые)
     function getDayData(dateKey) {
-        if (dateKey === today) {
-            if (!data.days[today]) data.days[today] = { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
-            return data.days[today];
+        if (!data.days[dateKey]) {
+            data.days[dateKey] = {
+                habits: {},
+                supps: {},
+                water: {},
+                weight: '',
+                underbust: '',
+                waist: '',
+                belly: '',
+                hips: '',
+                thigh: '',
+                feel: '',
+                sleep: '',
+                photoDone: false,
+                notes: ''
+            };
         }
-        if (!data.days[dateKey]) return { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
         return data.days[dateKey];
     }
 
-    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
 
-    function toggleHabit(id) { const d = getDayData(selectedDate); d.habits[id] = !d.habits[id]; save(); render(); }
-    function toggleSupp(key) { const d = getDayData(selectedDate); d.supps[key] = !d.supps[key]; save(); render(); }
-    function toggleWater(key) { const d = getDayData(selectedDate); d.water[key] = !d.water[key]; save(); render(); }
-    function setFeel(f) { const d = getDayData(selectedDate); d.feel = f; save(); render(); }
-    function setSleep(s) { const d = getDayData(selectedDate); d.sleep = s; save(); render(); }
+    // Универсальные экшены — работают с выбранным днем
+    function toggleHabit(id) {
+        const d = getDayData(selectedDate);
+        d.habits[id] = !d.habits[id];
+        save();
+        render();
+    }
+
+    function toggleSupp(key) {
+        const d = getDayData(selectedDate);
+        d.supps[key] = !d.supps[key];
+        save();
+        render();
+    }
+
+    function toggleWater(key) {
+        const d = getDayData(selectedDate);
+        d.water[key] = !d.water[key];
+        save();
+        render();
+    }
+
+    function setFeel(f) {
+        const d = getDayData(selectedDate);
+        d.feel = f;
+        save();
+        render();
+    }
+
+    function setSleep(s) {
+        const d = getDayData(selectedDate);
+        d.sleep = s;
+        save();
+        render();
+    }
 
     function isPhotoDay() {
         if (!data.lastPhotoDate) return true;
@@ -481,9 +598,10 @@
         showToast('📸 Фото отмечено!');
     }
 
+    // Календарь
     function getWeekDays(offset) {
         const now = new Date();
-        const dayOfWeek = now.getDay(); // 0 = вс
+        const dayOfWeek = now.getDay();
         const monday = new Date(now);
         monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + (offset * 7));
         const days = [];
@@ -533,21 +651,25 @@
                 render();
             };
         });
-        document.getElementById('prevWeek').onclick = () => { weekOffset--; renderCalendar(); render(); };
-        document.getElementById('nextWeek').onclick = () => { weekOffset++; renderCalendar(); render(); };
+
+        const prevBtn = document.getElementById('prevWeek');
+        const nextBtn = document.getElementById('nextWeek');
+        if (prevBtn) prevBtn.onclick = () => { weekOffset--; renderCalendar(); render(); };
+        if (nextBtn) nextBtn.onclick = () => { weekOffset++; renderCalendar(); render(); };
     }
 
     function render() {
         const freedomDays = Math.floor((new Date() - START_DATE) / 86400000);
         document.getElementById('freedomDays').textContent = freedomDays;
 
+        // Серия
         let streak = 0;
         const d = new Date();
         for (let i = 0; i < 365; i++) {
             const c = new Date(d); c.setDate(d.getDate() - i);
             const k = `${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}-${String(c.getDate()).padStart(2,'0')}`;
             const day = data.days[k];
-            if (day && day.habits && Object.values(day.habits).filter(v=>v).length >= 1) { streak++; continue; }
+            if (day && day.habits && Object.values(day.habits).filter(v => v).length >= 1) { streak++; continue; }
             break;
         }
         document.getElementById('streakCount').textContent = streak;
@@ -556,7 +678,7 @@
 
         const current = getDayData(selectedDate);
 
-        // Photo
+        // Фото-напоминалка (только для сегодня)
         const photoReminder = document.getElementById('photoReminder');
         if (selectedDate === today && isPhotoDay() && !current.photoDone) {
             photoReminder.style.display = 'flex';
@@ -564,6 +686,7 @@
             photoReminder.style.display = 'none';
         }
 
+        // Привычки
         function renderHabits(containerId, habits) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
@@ -571,7 +694,7 @@
                 const done = current.habits && current.habits[h.id] === true;
                 const card = document.createElement('div');
                 card.className = 'habit-card' + (done ? ' done' : '');
-                card.innerHTML = `<div class="habit-check">${done ? '✅' : h.icon}</div><div class="habit-info"><div class="name">${h.name}</div></div>`;
+                card.innerHTML = `<div class="habit-check">${done ? '✓' : h.icon}</div><div class="habit-info"><div class="name">${h.name}</div></div>`;
                 card.onclick = () => { toggleHabit(h.id); };
                 c.appendChild(card);
             });
@@ -580,6 +703,7 @@
         renderHabits('dayHabits', DAY_HABITS);
         renderHabits('eveningHabits', EVENING_HABITS);
 
+        // Добавки
         function renderSupps(containerId, list, prefix) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
@@ -588,7 +712,7 @@
                 const done = current.supps && current.supps[key] === true;
                 const chip = document.createElement('span');
                 chip.className = 'chip' + (done ? ' done' : '');
-                chip.textContent = (done ? '✅ ' : '') + s;
+                chip.textContent = (done ? '✓ ' : '') + s;
                 chip.onclick = () => { toggleSupp(key); };
                 c.appendChild(chip);
             });
@@ -597,6 +721,7 @@
         renderSupps('daySupps', DAY_SUPPS, 'd_');
         renderSupps('eveningSupps', EVENING_SUPPS, 'e_');
 
+        // Вода
         function renderWater(containerId, count, prefix) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
@@ -620,8 +745,9 @@
             const prefix = part === 'morning' ? 'wm_' : part === 'day' ? 'wd_' : 'we_';
             for (let i = 1; i <= count; i++) { totalCups++; if (current.water && current.water[prefix + i]) totalWater++; }
         });
-        document.getElementById('waterTotal').textContent = `💧 Всего воды: ${totalWater} из ${totalCups} стаканов`;
+        document.getElementById('waterTotal').textContent = `💧 Всего: ${totalWater} из ${totalCups} стаканов`;
 
+        // Сон
         const sleepRow = document.getElementById('sleepRow');
         sleepRow.innerHTML = '';
         SLEEP_OPTIONS.forEach(s => {
@@ -632,6 +758,7 @@
             sleepRow.appendChild(chip);
         });
 
+        // Самочувствие
         const feelRow = document.getElementById('feelRow');
         feelRow.innerHTML = '';
         FEEL_OPTIONS.forEach(f => {
@@ -642,6 +769,7 @@
             feelRow.appendChild(chip);
         });
 
+        // Замеры
         document.getElementById('weightInput').value = current.weight || '';
         document.getElementById('underbustInput').value = current.underbust || '';
         document.getElementById('waistInput').value = current.waist || '';
@@ -649,6 +777,7 @@
         document.getElementById('hipsInput').value = current.hips || '';
         document.getElementById('thighInput').value = current.thigh || '';
 
+        // График веса
         const chartValues = [];
         const now = new Date();
         for (let i = 6; i >= 0; i--) {
@@ -659,6 +788,7 @@
         }
         document.getElementById('chartValues').textContent = chartValues.join(' → ');
 
+        // Заметки
         document.getElementById('notesField').value = current.notes || '';
     }
 
@@ -687,7 +817,7 @@
             const ds = c.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
             if (day && day.habits && Object.keys(day.habits).length > 0) {
                 const total = ALL_HABITS.length;
-                const done = Object.values(day.habits).filter(v=>v).length;
+                const done = Object.values(day.habits).filter(v => v).length;
                 lines.push(`📅 ${ds} — ${done}/${total} привычек`);
                 ALL_HABITS.forEach(h => {
                     lines.push(`   ${day.habits[h.id] ? '✅' : '❌'} ${h.name}`);
