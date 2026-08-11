@@ -13,6 +13,7 @@
             --accent: #ff9500;
             --border: #e5e5ea;
             --done: #34c759;
+            --gold: #ffcc00;
             --shadow: 0 2px 12px rgba(0,0,0,0.06);
             --radius: 20px;
         }
@@ -59,6 +60,51 @@
         }
         .streak-card .days { font-size: 40px; font-weight: 800; color: var(--accent); letter-spacing: -1px; line-height: 1; }
         .streak-card .label { font-size: 13px; color: var(--sub); font-weight: 500; }
+
+        /* Календарь */
+        .calendar {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            margin: 12px 0;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .calendar .day-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 6px 4px;
+            border-radius: 14px;
+            transition: all 0.2s;
+            min-width: 38px;
+        }
+        .calendar .day-cell:active { transform: scale(0.92); }
+        .calendar .day-cell.today { border: 2px solid var(--accent); }
+        .calendar .day-cell.selected { background: #fff3e0; }
+        .calendar .day-cell .dow { font-size: 11px; color: var(--sub); font-weight: 500; text-transform: uppercase; }
+        .calendar .day-cell .dom { font-size: 17px; font-weight: 700; }
+        .calendar .day-cell .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #d1d1d6;
+        }
+        .calendar .day-cell .dot.gold { background: var(--gold); }
+        .calendar .day-cell .dot.orange { background: var(--accent); }
+        .calendar .day-cell .dot.green { background: var(--done); }
+        .calendar .nav-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            color: var(--accent);
+        }
 
         .time-block {
             background: var(--card);
@@ -274,6 +320,9 @@
         <div class="days" id="streakCount">0</div>
     </div>
 
+    <!-- КАЛЕНДАРЬ -->
+    <div class="calendar" id="calendar"></div>
+
     <!-- Фото-напоминалка -->
     <div class="photo-reminder" id="photoReminder" style="display: none;">
         <span class="reminder-text">📸 Сегодня день фото!</span>
@@ -317,6 +366,12 @@
         <div class="sleep-row" id="sleepRow"></div>
     </div>
 
+    <!-- САМОЧУВСТВИЕ -->
+    <div class="section-title">😌 ОЦЕНКА САМОЧУВСТВИЯ</div>
+    <div class="metrics-card">
+        <div class="feel-row" id="feelRow"></div>
+    </div>
+
     <!-- ВЕС И ЗАМЕРЫ -->
     <div class="section-title">⚖️ ВЕС И ЗАМЕРЫ</div>
     <div class="metrics-card">
@@ -328,7 +383,6 @@
             <input type="number" id="hipsInput" placeholder="Бёдра, см" step="0.1">
             <input type="number" id="thighInput" placeholder="Бедро, см" step="0.1">
         </div>
-        <div class="feel-row" id="feelRow"></div>
     </div>
 
     <!-- МИНИ-ГРАФИК ВЕСА -->
@@ -356,9 +410,9 @@
 
 <script>
 (function() {
-    const STORAGE_KEY = 'yana_tracker_v7';
-    const START_DATE = new Date(2026, 6, 19); // 19 июля 2026
-    const PHOTO_INTERVAL = 30; // дней между напоминаниями о фото
+    const STORAGE_KEY = 'yana_tracker_v8';
+    const START_DATE = new Date(2026, 6, 19);
+    const PHOTO_INTERVAL = 30;
 
     const MORNING_HABITS = [
         { id: 'wake', name: 'Подъём в 7:30', icon: '⏰' },
@@ -391,37 +445,102 @@
     let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{},"lastPhotoDate":null}');
     if (!data.lastPhotoDate) data.lastPhotoDate = null;
     let today = getToday();
-    let current = data.days[today] || { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
+    let selectedDate = today;
+    let weekOffset = 0; // 0 = текущая неделя
 
-    function save() { data.days[today] = current; localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    function getDayData(dateKey) {
+        if (dateKey === today) {
+            if (!data.days[today]) data.days[today] = { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
+            return data.days[today];
+        }
+        if (!data.days[dateKey]) return { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
+        return data.days[dateKey];
+    }
 
-    function toggleHabit(id) { current.habits[id] = !current.habits[id]; save(); render(); }
-    function toggleSupp(key) { current.supps[key] = !current.supps[key]; save(); render(); }
-    function toggleWater(key) { current.water[key] = !current.water[key]; save(); render(); }
-    function setFeel(f) { current.feel = f; save(); render(); }
-    function setSleep(s) { current.sleep = s; save(); render(); }
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+    function toggleHabit(id) { const d = getDayData(selectedDate); d.habits[id] = !d.habits[id]; save(); render(); }
+    function toggleSupp(key) { const d = getDayData(selectedDate); d.supps[key] = !d.supps[key]; save(); render(); }
+    function toggleWater(key) { const d = getDayData(selectedDate); d.water[key] = !d.water[key]; save(); render(); }
+    function setFeel(f) { const d = getDayData(selectedDate); d.feel = f; save(); render(); }
+    function setSleep(s) { const d = getDayData(selectedDate); d.sleep = s; save(); render(); }
 
     function isPhotoDay() {
         if (!data.lastPhotoDate) return true;
         const last = new Date(data.lastPhotoDate);
         const now = new Date();
-        const diff = Math.floor((now - last) / 86400000);
-        return diff >= PHOTO_INTERVAL;
+        return Math.floor((now - last) / 86400000) >= PHOTO_INTERVAL;
     }
 
     function markPhotoDone() {
-        current.photoDone = true;
-        data.lastPhotoDate = today;
+        const d = getDayData(selectedDate);
+        d.photoDone = true;
+        data.lastPhotoDate = selectedDate;
         save();
         render();
         showToast('📸 Фото отмечено!');
+    }
+
+    function getWeekDays(offset) {
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 0 = вс
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + (offset * 7));
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            days.push({ date: d, key: key });
+        }
+        return days;
+    }
+
+    function getDotClass(dateKey) {
+        const day = data.days[dateKey];
+        if (!day || !day.habits) return '';
+        const total = ALL_HABITS.length;
+        const done = Object.values(day.habits).filter(v => v).length;
+        if (done === total) return 'gold';
+        if (done >= total / 2) return 'orange';
+        if (done >= 1) return 'green';
+        return '';
+    }
+
+    function renderCalendar() {
+        const cal = document.getElementById('calendar');
+        const weekDays = getWeekDays(weekOffset);
+        const dowNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+        let html = '<button class="nav-btn" id="prevWeek">◀</button>';
+        weekDays.forEach((wd, i) => {
+            const isToday = wd.key === today;
+            const isSelected = wd.key === selectedDate;
+            const dotClass = getDotClass(wd.key);
+            html += `
+                <div class="day-cell${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}" data-date="${wd.key}">
+                    <span class="dow">${dowNames[i]}</span>
+                    <span class="dom">${wd.date.getDate()}</span>
+                    <span class="dot${dotClass ? ' ' + dotClass : ''}"></span>
+                </div>`;
+        });
+        html += '<button class="nav-btn" id="nextWeek">▶</button>';
+        cal.innerHTML = html;
+
+        cal.querySelectorAll('.day-cell').forEach(cell => {
+            cell.onclick = () => {
+                selectedDate = cell.dataset.date;
+                render();
+            };
+        });
+        document.getElementById('prevWeek').onclick = () => { weekOffset--; renderCalendar(); render(); };
+        document.getElementById('nextWeek').onclick = () => { weekOffset++; renderCalendar(); render(); };
     }
 
     function render() {
         const freedomDays = Math.floor((new Date() - START_DATE) / 86400000);
         document.getElementById('freedomDays').textContent = freedomDays;
 
-        // Streak
         let streak = 0;
         const d = new Date();
         for (let i = 0; i < 365; i++) {
@@ -429,29 +548,31 @@
             const k = `${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}-${String(c.getDate()).padStart(2,'0')}`;
             const day = data.days[k];
             if (day && day.habits && Object.values(day.habits).filter(v=>v).length >= 1) { streak++; continue; }
-            if (i === 0 && current.habits && Object.values(current.habits).filter(v=>v).length >= 1) { streak++; continue; }
             break;
         }
         document.getElementById('streakCount').textContent = streak;
 
-        // Photo reminder
+        renderCalendar();
+
+        const current = getDayData(selectedDate);
+
+        // Photo
         const photoReminder = document.getElementById('photoReminder');
-        if (isPhotoDay() && !current.photoDone) {
+        if (selectedDate === today && isPhotoDay() && !current.photoDone) {
             photoReminder.style.display = 'flex';
         } else {
             photoReminder.style.display = 'none';
         }
 
-        // Habits
         function renderHabits(containerId, habits) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
             habits.forEach(h => {
-                const done = current.habits[h.id] === true;
+                const done = current.habits && current.habits[h.id] === true;
                 const card = document.createElement('div');
                 card.className = 'habit-card' + (done ? ' done' : '');
                 card.innerHTML = `<div class="habit-check">${done ? '✅' : h.icon}</div><div class="habit-info"><div class="name">${h.name}</div></div>`;
-                card.onclick = () => toggleHabit(h.id);
+                card.onclick = () => { toggleHabit(h.id); };
                 c.appendChild(card);
             });
         }
@@ -459,17 +580,16 @@
         renderHabits('dayHabits', DAY_HABITS);
         renderHabits('eveningHabits', EVENING_HABITS);
 
-        // Supps
         function renderSupps(containerId, list, prefix) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
             list.forEach(s => {
                 const key = prefix + s;
-                const done = current.supps[key] === true;
+                const done = current.supps && current.supps[key] === true;
                 const chip = document.createElement('span');
                 chip.className = 'chip' + (done ? ' done' : '');
                 chip.textContent = (done ? '✅ ' : '') + s;
-                chip.onclick = () => toggleSupp(key);
+                chip.onclick = () => { toggleSupp(key); };
                 c.appendChild(chip);
             });
         }
@@ -477,17 +597,16 @@
         renderSupps('daySupps', DAY_SUPPS, 'd_');
         renderSupps('eveningSupps', EVENING_SUPPS, 'e_');
 
-        // Water
         function renderWater(containerId, count, prefix) {
             const c = document.getElementById(containerId);
             c.innerHTML = '';
             for (let i = 1; i <= count; i++) {
                 const key = prefix + i;
-                const filled = current.water[key] === true;
+                const filled = current.water && current.water[key] === true;
                 const cup = document.createElement('span');
                 cup.className = 'water-cup' + (filled ? ' filled' : '');
                 cup.textContent = filled ? '💧' : '';
-                cup.onclick = () => toggleWater(key);
+                cup.onclick = () => { toggleWater(key); };
                 c.appendChild(cup);
             }
         }
@@ -499,28 +618,19 @@
         Object.keys(WATER_SPLIT).forEach(part => {
             const count = WATER_SPLIT[part];
             const prefix = part === 'morning' ? 'wm_' : part === 'day' ? 'wd_' : 'we_';
-            for (let i = 1; i <= count; i++) { totalCups++; if (current.water[prefix + i]) totalWater++; }
+            for (let i = 1; i <= count; i++) { totalCups++; if (current.water && current.water[prefix + i]) totalWater++; }
         });
         document.getElementById('waterTotal').textContent = `💧 Всего воды: ${totalWater} из ${totalCups} стаканов`;
 
-        // Sleep
         const sleepRow = document.getElementById('sleepRow');
         sleepRow.innerHTML = '';
         SLEEP_OPTIONS.forEach(s => {
             const chip = document.createElement('span');
             chip.className = 'sleep-chip' + (current.sleep === s ? ' selected' : '');
             chip.textContent = s;
-            chip.onclick = () => setSleep(s);
+            chip.onclick = () => { setSleep(s); };
             sleepRow.appendChild(chip);
         });
-
-        // Metrics
-        document.getElementById('weightInput').value = current.weight || '';
-        document.getElementById('underbustInput').value = current.underbust || '';
-        document.getElementById('waistInput').value = current.waist || '';
-        document.getElementById('bellyInput').value = current.belly || '';
-        document.getElementById('hipsInput').value = current.hips || '';
-        document.getElementById('thighInput').value = current.thigh || '';
 
         const feelRow = document.getElementById('feelRow');
         feelRow.innerHTML = '';
@@ -528,22 +638,24 @@
             const chip = document.createElement('span');
             chip.className = 'feel-chip' + (current.feel === f ? ' selected' : '');
             chip.textContent = f;
-            chip.onclick = () => setFeel(f);
+            chip.onclick = () => { setFeel(f); };
             feelRow.appendChild(chip);
         });
 
-        // Weight chart
+        document.getElementById('weightInput').value = current.weight || '';
+        document.getElementById('underbustInput').value = current.underbust || '';
+        document.getElementById('waistInput').value = current.waist || '';
+        document.getElementById('bellyInput').value = current.belly || '';
+        document.getElementById('hipsInput').value = current.hips || '';
+        document.getElementById('thighInput').value = current.thigh || '';
+
         const chartValues = [];
         const now = new Date();
         for (let i = 6; i >= 0; i--) {
             const c = new Date(now); c.setDate(now.getDate() - i);
             const k = `${c.getFullYear()}-${String(c.getMonth()+1).padStart(2,'0')}-${String(c.getDate()).padStart(2,'0')}`;
             const day = data.days[k];
-            if (day && day.weight) {
-                chartValues.push(day.weight);
-            } else {
-                chartValues.push('—');
-            }
+            chartValues.push((day && day.weight) ? day.weight : '—');
         }
         document.getElementById('chartValues').textContent = chartValues.join(' → ');
 
@@ -551,13 +663,14 @@
     }
 
     function saveAll() {
-        current.weight = document.getElementById('weightInput').value.trim();
-        current.underbust = document.getElementById('underbustInput').value.trim();
-        current.waist = document.getElementById('waistInput').value.trim();
-        current.belly = document.getElementById('bellyInput').value.trim();
-        current.hips = document.getElementById('hipsInput').value.trim();
-        current.thigh = document.getElementById('thighInput').value.trim();
-        current.notes = document.getElementById('notesField').value.trim();
+        const d = getDayData(selectedDate);
+        d.weight = document.getElementById('weightInput').value.trim();
+        d.underbust = document.getElementById('underbustInput').value.trim();
+        d.waist = document.getElementById('waistInput').value.trim();
+        d.belly = document.getElementById('bellyInput').value.trim();
+        d.hips = document.getElementById('hipsInput').value.trim();
+        d.thigh = document.getElementById('thighInput').value.trim();
+        d.notes = document.getElementById('notesField').value.trim();
         save();
         render();
         showToast('💾 Сохранено!');
@@ -577,17 +690,16 @@
                 const done = Object.values(day.habits).filter(v=>v).length;
                 lines.push(`📅 ${ds} — ${done}/${total} привычек`);
                 ALL_HABITS.forEach(h => {
-                    const status = day.habits[h.id] ? '✅' : '❌';
-                    lines.push(`   ${status} ${h.name}`);
+                    lines.push(`   ${day.habits[h.id] ? '✅' : '❌'} ${h.name}`);
                 });
                 if (day.sleep) lines.push(`   💤 Сон: ${day.sleep}`);
+                if (day.feel) lines.push(`   😌 Самочувствие: ${day.feel}`);
                 if (day.weight) lines.push(`   ⚖️ Вес: ${day.weight} кг`);
                 if (day.underbust) lines.push(`   📏 Под грудью: ${day.underbust} см`);
                 if (day.waist) lines.push(`   📏 Талия: ${day.waist} см`);
                 if (day.belly) lines.push(`   📏 Живот: ${day.belly} см`);
                 if (day.hips) lines.push(`   📏 Бёдра: ${day.hips} см`);
                 if (day.thigh) lines.push(`   📏 Бедро: ${day.thigh} см`);
-                if (day.feel) lines.push(`   😌 Самочувствие: ${day.feel}`);
                 if (day.photoDone) lines.push(`   📸 Фото сделано`);
                 if (day.notes) lines.push(`   📝 ${day.notes}`);
             } else {
@@ -602,7 +714,8 @@
         if (confirm('Удалить все данные?')) {
             localStorage.removeItem(STORAGE_KEY);
             data = { days: {}, lastPhotoDate: null };
-            current = { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
+            selectedDate = today;
+            weekOffset = 0;
             render();
         }
     }
@@ -618,7 +731,6 @@
     document.getElementById('resetAllBtn').onclick = resetAll;
     document.getElementById('photoDoneBtn').onclick = markPhotoDone;
 
-    if (!data.days[today]) current = { habits: {}, supps: {}, water: {}, weight: '', underbust: '', waist: '', belly: '', hips: '', thigh: '', feel: '', sleep: '', photoDone: false, notes: '' };
     render();
 })();
 </script>
