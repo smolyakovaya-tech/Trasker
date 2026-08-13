@@ -424,7 +424,7 @@
     <div class="section-title">😊 Оценка самочувствия</div>
     <div class="glass"><div class="feel-row" id="feelRow"></div></div>
 
-    <div class="section-title">🎯 Вес и замеры</div>
+      <div class="section-title">⚖️ Вес и замеры</div>
     <div class="glass">
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <div class="metric-row"><span class="metric-label">⚖️ Вес</span><input type="number" id="weightInput" placeholder="кг" step="0.1"><span class="diff" id="weightDiff"></span></div>
@@ -558,35 +558,60 @@
         document.getElementById('nextWeek').onclick = () => { weekOffset++; renderCalendar(); render(); };
     }
 
-    function getPreviousValue(field) {
-        const dates = Object.keys(data.days).sort().reverse();
-        for (const date of dates) {
-            if (date >= selectedDate) continue;
-            const day = data.days[date];
-            if (day && day[field] && !isNaN(parseFloat(day[field]))) return parseFloat(day[field]);
-        }
-        return null;
-    }
-
-    function showDiff(field, diffId) {
+      function showDiff(field, diffId) {
         const inputEl = document.getElementById(field + 'Input');
         const diffEl = document.getElementById(diffId);
         if (!inputEl || !diffEl) return;
+
         const currentVal = parseFloat(inputEl.value);
-        const prevVal = getPreviousValue(field);
-        if (currentVal && prevVal && !isNaN(currentVal) && !isNaN(prevVal)) {
-            const diff = currentVal - prevVal;
-            if (diff < 0) {
-                diffEl.textContent = `▼ ${Math.abs(diff).toFixed(1)}`;
-                diffEl.style.color = '#2ed573';
-            } else if (diff > 0) {
-                diffEl.textContent = `▲ +${diff.toFixed(1)}`;
-                diffEl.style.color = '#ff4757';
-            } else {
-                diffEl.textContent = '0';
-                diffEl.style.color = 'rgba(255,255,255,0.5)';
+        if (currentVal && !isNaN(currentVal)) {
+            // Получаем все предыдущие значения
+            const dates = Object.keys(data.days).sort();
+            const allValues = [];
+            for (const date of dates) {
+                if (date >= selectedDate) continue;
+                const day = data.days[date];
+                if (day && day[field] && !isNaN(parseFloat(day[field]))) {
+                    allValues.push(parseFloat(day[field]));
+                }
             }
-        } else { diffEl.textContent = ''; }
+
+            if (allValues.length > 0) {
+                // Первое значение (самое раннее)
+                const firstVal = allValues[0];
+                // Предыдущее значение (самое позднее перед текущим)
+                const prevVal = allValues[allValues.length - 1];
+
+                const diffFromPrev = currentVal - prevVal;
+                const diffFromFirst = currentVal - firstVal;
+
+                let prevPart = '';
+                if (diffFromPrev < 0) {
+                    prevPart = `▼ ${Math.abs(diffFromPrev).toFixed(1)}`;
+                } else if (diffFromPrev > 0) {
+                    prevPart = `▲ +${diffFromPrev.toFixed(1)}`;
+                } else {
+                    prevPart = '0';
+                }
+
+                let firstPart = '';
+                if (diffFromFirst < 0) {
+                    firstPart = `▼ ${Math.abs(diffFromFirst).toFixed(1)}`;
+                } else if (diffFromFirst > 0) {
+                    firstPart = `▲ +${diffFromFirst.toFixed(1)}`;
+                } else {
+                    firstPart = '0';
+                }
+
+                diffEl.textContent = `${prevPart} (общ: ${firstPart})`;
+                diffEl.style.fontSize = '12px';
+                diffEl.style.color = diffFromPrev < 0 ? '#2ed573' : diffFromPrev > 0 ? '#ff4757' : 'rgba(255,255,255,0.5)';
+            } else {
+                diffEl.textContent = '';
+            }
+        } else {
+            diffEl.textContent = '';
+        }
     }
 
     function updateTheme() {
