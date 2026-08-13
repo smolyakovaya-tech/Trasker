@@ -253,7 +253,7 @@
             outline: none;
             background: rgba(55,60,70,0.7);
             color: var(--text);
-            width: 35%;
+            width: 50%;
             transition: all 0.2s ease;
         }
         .metric-row input:focus {
@@ -603,7 +603,7 @@
                     firstPart = '0';
                 }
 
-                diffEl.textContent = `${prevPart} (общ: ${firstPart})`;
+                diffEl.textContent = `${prevPart} | ${firstPart}`;
                 diffEl.style.fontSize = '12px';
                 diffEl.style.color = diffFromPrev < 0 ? '#2ed573' : diffFromPrev > 0 ? '#ff4757' : 'rgba(255,255,255,0.5)';
             } else {
