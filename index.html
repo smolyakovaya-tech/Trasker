@@ -597,7 +597,7 @@
                 if (diffFirst < 0) { firstText = `▼ ${Math.abs(diffFirst).toFixed(1)}`; firstColor = '#2ed573'; }
                 else if (diffFirst > 0) { firstText = `▲ +${diffFirst.toFixed(1)}`; firstColor = '#ff4757'; }
                 else { firstText = '0'; firstColor = 'rgba(255,255,255,0.5)'; }
-                diffEl.innerHTML = `<span style="color: ${prevColor};">${prevText}</span> <span style="color: rgba(255,255,255,0.5);">(общ:</span> <span style="color: ${firstColor};">${firstText}</span><span style="color: rgba(255,255,255,0.5);">)</span>`;
+                diffEl.innerHTML = `<span style="color: ${prevColor};">${prevText}</span> <span style="color: rgba(255,255,255,0.5);">(</span> <span style="color: ${firstColor};">${firstText}</span><span style="color: rgba(255,255,255,0.5);">)</span>`;
             } else {
                 diffEl.textContent = '';
             }
